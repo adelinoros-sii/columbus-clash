@@ -4,8 +4,13 @@ Retro pixel fighting game set in the Columbus tavern on Halloween night. Alen, S
 
 - Controls: WASD move, J/I low/high punch, K/O low/high kick, L block, U special, Space super. Local P2 uses a gamepad or arrows + numpad.
 - Phones: touch controls appear automatically (slide on the d-pad for motions). Landscape puts the controls over the screen. FULL goes fullscreen on Android; on iPhone use Add to Home Screen.
+- Every fighter has power kombos with pixel effects (lightning, fire pillar and breath, ground slam, tornado, black hole, shadow hands). The full kombo list is in the in-game move list.
 - Everything is in one file: `index.html`. There's no build step.
 - Online matches use Supabase Realtime (project `columbus-clash`) to set up rooms, then a direct WebRTC connection between the two browsers when it's available. The game runs in input-delay lockstep and resyncs automatically if the two sides drift apart.
 - Deploy: import this repo in Vercel (framework "Other", no build command). Every push to `main` redeploys.
+
+## Credits
+
+Power and hit effects are rendered with [pixelfx](https://github.com/patch-gg/pixelfx) by Patch and Hugo Duprez (MIT License). Story enemy sprites: "Bad Company" universal prototype by Stonewall (CC0).
 
 Play it at https://columbus-clash.vercel.app
