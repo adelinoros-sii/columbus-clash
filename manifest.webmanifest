@@ -1,0 +1,29 @@
+{
+ "name": "Columbus Clash",
+ "short_name": "Columbus Clash",
+ "description": "Retro pixel fighting game in the Columbus tavern on Halloween night.",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "any",
+ "background_color": "#0c0714",
+ "theme_color": "#0c0714",
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icons/maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
