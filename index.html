@@ -1,3 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0c0714">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Columbus Clash">
+<meta name="description" content="Retro pixel fighting game in the Columbus tavern on Halloween night.">
 <title>Columbus Clash</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,6 +72,47 @@ kbd{font-family:var(--body);background:#2a1840;border:1px solid #4a3166;border-b
 .f-alen{border-top:4px solid #ffd21f}.f-serj{border-top:4px solid #e2263a}.f-ade{border-top:4px solid #eeeef4}.f-odi{border-top:4px solid #4aa8ff}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (max-width:520px){.pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}.btns{grid-template-columns:repeat(3,50px)}#touch .act{height:50px}}
+
+/* ---- phones & tablets: the game takes the whole screen, controls sit over / under it ---- */
+#helpX{display:none}
+html.touch,html.touch body{height:100%;overflow:hidden;overscroll-behavior:none}
+html.touch body{padding:0;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+html.touch main{position:fixed;inset:0;max-width:none;gap:0;justify-content:flex-start}
+html.touch section.help{display:none}
+html.touch.showhelp section.help{display:grid;position:fixed;inset:0;box-sizing:border-box;z-index:20;overflow:auto;touch-action:pan-y;-webkit-user-select:text;user-select:text;
+  background:rgba(12,7,20,.97);padding:64px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px));align-content:start}
+html.touch.showhelp #helpX{display:block;position:fixed;z-index:21;top:max(12px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));
+  font-family:var(--display);font-size:10px;padding:10px 14px;background:var(--panel2);color:var(--ink);border:2px solid var(--gold);border-radius:4px}
+html.touch #touch{--u:min(14vw,64px);box-sizing:border-box}
+html.touch #touch button{-webkit-user-select:none;user-select:none}
+html.touch .pad{touch-action:none;grid-template-columns:repeat(3,calc(var(--u)*.9));grid-template-rows:repeat(3,calc(var(--u)*.9));border-radius:50%}
+html.touch .pad button{pointer-events:none;height:auto}
+html.touch .btns{grid-template-columns:repeat(3,var(--u));gap:calc(var(--u)*.16)}
+html.touch #touch .act{height:var(--u);font-size:calc(var(--u)*.22)}
+html.touch .mid{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:5px}
+html.touch #touch .small{height:32px;font-size:8px;padding:0 10px}
+@media (orientation:portrait){
+  html.touch #stage{width:100%;max-width:none;margin-top:env(safe-area-inset-top,0px);box-shadow:0 0 0 2px #2a1840}
+  html.touch #touch{display:grid;flex:1;width:100%;max-width:560px;grid-template-columns:auto auto;grid-template-areas:"mid mid" "pad btns";
+    justify-content:space-between;align-content:center;row-gap:clamp(14px,5vh,40px);
+    padding:12px max(12px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+  html.touch .mid{grid-area:mid}html.touch .pad{grid-area:pad}html.touch .btns{grid-area:btns}
+}
+@media (orientation:landscape){
+  html.touch main{justify-content:center;background:#000}
+  html.touch #stage{width:min(100vw,calc(100vh * 16 / 9));max-width:none;box-shadow:none}
+  @supports (height:100dvh){html.touch #stage{width:min(100vw,calc(100dvh * 16 / 9))}}
+  html.touch #touch{--u:min(17vh,72px);position:fixed;inset:0;display:block;max-width:none;pointer-events:none}
+  html.touch #touch .pad,html.touch #touch .btns,html.touch #touch .mid{position:absolute;pointer-events:auto}
+  html.touch .pad{left:max(14px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px))}
+  html.touch .btns{right:max(14px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px))}
+  html.touch .mid{left:50%;bottom:max(6px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);flex-wrap:nowrap}
+  html.touch #touch button{background:rgba(31,18,48,.42);border-color:rgba(255,255,255,.28)}
+  html.touch #touch .act.p{border-color:rgba(226,38,58,.8)}html.touch #touch .act.k{border-color:rgba(58,139,224,.85)}
+  html.touch #touch .act.s{border-color:rgba(255,194,58,.85)}html.touch #touch .act.b{border-color:rgba(159,232,255,.8)}
+  html.touch #touch .small{height:26px;font-size:7px;padding:0 8px;background:rgba(31,18,48,.55)}
+  html.touch #touch button.on{background:rgba(255,194,58,.35);border-color:var(--gold)}
+}
 </style>
 
 <main>
@@ -76,6 +128,8 @@ kbd{font-family:var(--body);background:#2a1840;border:1px solid #4a3166;border-b
       <button class="small" data-k="Enter">START</button>
       <button class="small" data-k="Escape">PAUSE</button>
       <button class="small" data-k="SUPER">SUPER</button>
+      <button class="small" id="tMoves" type="button">MOVES</button>
+      <button class="small" id="tFull" type="button" hidden>FULL</button>
     </div>
     <div class="btns">
       <button class="act p" data-k="KeyI">HP</button>
@@ -87,6 +141,7 @@ kbd{font-family:var(--body);background:#2a1840;border:1px solid #4a3166;border-b
     </div>
   </div>
   <section class="help" id="help" aria-label="How to play"></section>
+  <button id="helpX" type="button">CLOSE ✕</button>
 </main>
 
 <script>
@@ -370,10 +425,35 @@ function updatePadPrev(){for(let i=0;i<2;i++){const gp=readPad(i);if(!gp){padPre
 // touch
 const isTouch=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
 if(isTouch)document.documentElement.classList.add('touch');
-document.querySelectorAll('#touch button').forEach(b=>{const k=b.dataset.k;
+document.querySelectorAll('#touch .mid button[data-k],#touch .btns button[data-k]').forEach(b=>{const k=b.dataset.k;
  const down=e=>{e.preventDefault();audio();b.classList.add('on');if(k==='SUPER'){keys.add('SUPER');pressed.add('SUPER');}else{if(!keys.has(k))pressed.add(k);keys.add(k);}try{b.setPointerCapture(e.pointerId);}catch(_){}};
  const up=e=>{b.classList.remove('on');keys.delete(k==='SUPER'?'SUPER':k);};
- b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);});
+ b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);
+ b.addEventListener('contextmenu',e=>e.preventDefault());});
+// d-pad is one touch zone: the thumb can slide (down -> forward etc.) for special-move motions
+(()=>{const pad=document.querySelector('#touch .pad');if(!pad)return;const PB={};pad.querySelectorAll('button[data-k]').forEach(b=>PB[b.dataset.k]=b);
+ let pid=null;const held=new Set();
+ const set=on=>{for(const k of ['KeyW','KeyA','KeyS','KeyD']){const want=on.has(k);if(want&&!held.has(k)){held.add(k);if(!keys.has(k))pressed.add(k);keys.add(k);PB[k]&&PB[k].classList.add('on');}
+   else if(!want&&held.has(k)){held.delete(k);keys.delete(k);PB[k]&&PB[k].classList.remove('on');}}};
+ const dirs=e=>{const r=pad.getBoundingClientRect(),dx=(e.clientX-(r.left+r.width/2))/(r.width/2),dy=(e.clientY-(r.top+r.height/2))/(r.height/2);
+   const o=new Set(),d=Math.hypot(dx,dy);if(d<.22)return o;const a=Math.atan2(dy,dx)*180/Math.PI;
+   if(a>-67.5&&a<67.5)o.add('KeyD');if(a>112.5||a<-112.5)o.add('KeyA');if(a>22.5&&a<157.5)o.add('KeyS');if(a<-22.5&&a>-157.5)o.add('KeyW');return o;};
+ pad.addEventListener('pointerdown',e=>{e.preventDefault();audio();pid=e.pointerId;try{pad.setPointerCapture(pid);}catch(_){}set(dirs(e));});
+ pad.addEventListener('pointermove',e=>{if(e.pointerId!==pid)return;e.preventDefault();set(dirs(e));});
+ const end=e=>{if(e.pointerId!==pid)return;pid=null;set(new Set());};
+ pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end);pad.addEventListener('lostpointercapture',end);
+ pad.addEventListener('contextmenu',e=>e.preventDefault());})();
+(()=>{const root=document.documentElement,mv=document.getElementById('tMoves'),x=document.getElementById('helpX'),fb=document.getElementById('tFull');
+ const toggle=on=>{root.classList.toggle('showhelp',on);};
+ mv&&mv.addEventListener('click',()=>{toggle(true);if(game.scene==='fight'&&!game.paused&&!game.demo&&game.mode!=='online')game.paused=true;});
+ x&&x.addEventListener('click',()=>toggle(false));
+ const fsEl=root,can=!!(fsEl.requestFullscreen||fsEl.webkitRequestFullscreen);
+ if(fb&&can){fb.hidden=false;fb.addEventListener('click',async()=>{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}
+   await (fsEl.requestFullscreen||fsEl.webkitRequestFullscreen).call(fsEl);if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}catch(_){}});}
+ // stop pinch / double-tap zoom while playing
+ document.addEventListener('gesturestart',e=>{if(root.classList.contains('touch'))e.preventDefault();});
+ let lastT=0;document.addEventListener('touchend',e=>{if(!root.classList.contains('touch')||root.classList.contains('showhelp'))return;const n=Date.now();if(n-lastT<320&&!(e.target.closest&&e.target.closest('input,#net')))e.preventDefault();lastT=n;},{passive:false});
+})();
 
 // ================= PARTICLES / FX =================
 let parts=[],projs=[],pops=[];
@@ -1359,6 +1439,7 @@ let html=`<div class="card"><h2>Controls</h2><p class="tag">KEYBOARD · GAMEPAD 
 <dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dd>
 <dt>Punch</dt><dd><kbd>I</kbd> high · <kbd>J</kbd> low</dd><dt>Kick</dt><dd><kbd>O</kbd> high · <kbd>K</kbd> low</dd>
 <dt>Block</dt><dd><kbd>L</kbd></dd><dt>Special</dt><dd><kbd>U</kbd> · super <kbd>Space</kbd></dd>
+<dt>Touch</dt><dd>Slide your thumb around the pad for motions (↓ → etc.). Buttons: LP HP LK HK, BL block, SP special, SUPER.</dd>
 <dt>Local P2</dt><dd>Gamepad, or arrows + numpad (1/4 punch · 2/5 kick · 3 block · 6 special)</dd>
 <dt>Gamepad</dt><dd>X low punch · Y high punch · A low kick · B high kick · RB/LT block · LB special · RT super</dd>
 <dt>Other</dt><dd><kbd>Enter</kbd> start · <kbd>Esc</kbd> pause · <kbd>M</kbd> music</dd></dl>
@@ -1373,3 +1454,5 @@ for(const k of ORDER){const c=CHARS[k];const combos=Object.entries(c.dial||{}).f
 help.innerHTML=html;
 })();
 </script>
+
+</html>
