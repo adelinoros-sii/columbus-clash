@@ -581,7 +581,7 @@ function dust(x,y,n=6){for(let i=0;i<n;i++)parts.push({x:x+rnd(-6,6),y:y-1,vx:rn
 function pop(text,x,y,col='#ffd23a',life=70,size=8){pops.push({text,x,y,col,life,max:life,size});}
 const CHAT=['GG!','NICE ONE!','OOPS!','ONE MORE?','HAHA!','TOO EASY'];let chats=[],chatIdx=0;
 function chatSay(side,i){const text=CHAT[i];if(!text)return;chats=chats.filter(c=>c.side!==side);chats.push({side,text,t:150});sfx.move();}
-function chatKeys(){if(!['fight','result','select','vs'].includes(game.scene))return;for(let i=0;i<CHAT.length;i++)if(pressed.has('Digit'+(i+1))){const side=game.mode==='online'?NET.side:0;chatSay(side,i);if(game.mode==='online'&&NET.on)netSend({t:'chat',i,s:side});}
+function chatKeys(){if(NET.spec)return;if(!['fight','result','select','vs'].includes(game.scene))return;for(let i=0;i<CHAT.length;i++)if(pressed.has('Digit'+(i+1))){const side=game.mode==='online'?NET.side:0;chatSay(side,i);if(game.mode==='online'&&NET.on)netSend({t:'chat',i,s:side});}
  for(const c of chats)c.t--;chats=chats.filter(c=>c.t>0);}
 function drawChats(){for(const c of chats){const f=game.scene==='fight'&&game.f[c.side];const x=f?clamp(f.x+(c.side===0?-26:26),50,W-50):(c.side===0?70:W-70),y=f?Math.max(40,f.y-142):122;
  V.font='6px '+FONT;const w=Math.ceil(V.measureText(c.text).width)+10;V.globalAlpha=clamp(c.t/15,0,1);V.fillStyle='#0a0410';V.fillRect(x-w/2-1,y-1,w+2,13);V.fillStyle='#fff6d8';V.fillRect(x-w/2,y,w,11);V.fillRect(x-2,y+11,4,2);V.fillRect(x-1,y+13,2,1);
@@ -1292,7 +1292,7 @@ function newAI(lvl){return {lvl:LEVELS[lvl],plan:[],cool:20,holdT:0,hold:{},def:
 // ================= GAME / SCENES =================
 const game={party:null,tagRound:0,tagPick:null,team:null,bench:null,tagCD:[0,0],tagIn:[0,0],wso:null,cos:[0,0],stageId:'tavern',stageFixed:false,newUnl:[],rtw:2,firstHit:0,superKO:0,scene:'title',menu:0,mode:'cpu',level:1,sel:[0,1],lock:[false,false],selPhase:0,f:[null,null],round:1,wins:[0,0],timer:99,tick:0,phase:'intro',phaseT:0,control:false,superFreeze:0,superBy:null,superName:'',ko:null,banner:'',bannerT:0,paused:false,pauseIdx:0,resIdx:0,idleT:0,demo:false,winner:null,credits:0,vsT:0,
  onKO(def,att){
-  if(this.phase==='finish'){this.phase='ko';this.phaseT=0;this.control=false;slow=40;flashA=.5;sfx.ko();this.banner='K.O.';this.bannerT=100;return;}
+  if(this.phase==='finish'){this.phase='ko';this.koHit=true;this.phaseT=0;this.control=false;slow=40;flashA=.5;sfx.ko();this.banner='K.O.';this.bannerT=100;return;}
   if(this.phase!=='fight')return;
   if(this.party==='tag'&&this.bench){const i=this.f.indexOf(def),m=this.bench[i];if(i>=0&&m&&m.hp>0){this.tagIn[i]=80;slow=24;flashA=.4;sfx.ko();pop(def.ch.name+' IS DOWN!',i===0?110:W-110,52,'#ff3a4a',70,6);return;}}
   if(this.party==='ffa'&&this.f.filter(f=>f.hp>0).length>1){slow=24;flashA=.4;sfx.ko();pop('ELIMINATED!',def.x,def.y-110,'#ff3a4a',80,7);say('eliminated');return;}
@@ -1300,16 +1300,16 @@ const game={party:null,tagRound:0,tagPick:null,team:null,bench:null,tagCD:[0,0],
   if(!this.demo&&!this.party&&def.hp<=0&&att.hp>0&&this.wins[ai]+1>=this.rtw){this.phase='finish';this.phaseT=0;this.finAtt=att;this.finDef=def;
    def.state='dizzy';def.move=null;def.vy=0;def.y=FLOOR;def.vx=(def.x>=att.x?1:-1)*2.4;def.st=0;def.inv=0;def.combo=0;def.juggle=0;
    for(const p of projs)p.dead=true;slow=30;flashA=.5;sfx.ko();this.banner='CLOSING TIME!';this.bannerT=150;return;}
-this.phase='ko';this.phaseT=0;this.control=false;slow=60;flashA=.7;sfx.ko();this.banner=(def.hp<=0&&att.hp>=att.ch.hp)?'PERFECT':this.superKO?'SUPER FINISH':'K.O.';this.bannerT=120;}};
+this.phase='ko';this.koHit=true;this.phaseT=0;this.control=false;slow=60;flashA=.7;sfx.ko();this.banner=(def.hp<=0&&att.hp>=att.ch.hp)?'PERFECT':this.superKO?'SUPER FINISH':'K.O.';this.bannerT=120;}};
 let titleDummies=[],selDummies=[null,null];
 function dummy(key,alt,facing=1){const f=new Fighter(key,0,alt);f.facing=facing;f.state='idle';return f;}
 function effCos(i){const c=game.cos||[0,0],k=ROSTER[game.sel[i]];if(!SLOT[k])return 0;let v=c[i]|0;if(i===1&&ROSTER[game.sel[0]]===k&&(c[0]|0)===v)v=v===1?0:1;return v;}
 function startMatch(){const k1=ROSTER[game.sel[0]],k2=ROSTER[game.sel[1]];const ge=game.el||[];game.f=[new Fighter(k1,0,false,ge[0]),new Fighter(k2,1,k1===k2,ge[1])];game.f[0].cos=effCos(0);game.f[1].cos=effCos(1);
  if(!game.stageFixed)game.stageId=game.mode==='story'&&game.story?(STORY_STAGES[game.story.stage]==='ghoul'?'cellar':'tavern'):resolveStage();game.stageFixed=false;game.unl0=new Set(unlockKeys());
  if(game.mode==='cpu'||game.mode==='story'||game.demo){game.f[1].ai=newAI(game.level);}if(game.demo){game.f[0].ai=newAI(1);}
- partySetup();game.wins=game.f.map(()=>0);game.round=1;startRound();}
+ partySetup();game.replayed=false;game.wins=game.f.map(()=>0);game.round=1;startRound();}
 function startRound(){if(game.team){game.f=[game.team[0][0],game.team[1][0]];game.bench=[game.team[0][1],game.team[1][1]];for(const b of game.bench){b.reset();b.regenCap=b.ch.hp;}game.tagCD=[0,0];game.tagIn=[0,0];}
- for(const f of game.f){f.reset();f.inp=newInput();}if(game.f.length>2){const X=[70,192,314];game.f.forEach((f,i)=>{f.x=X[i];f.facing=f.x<192?1:-1;});}projs=[];parts=[];pops=[];vfx=[];game.firstHit=0;game.superKO=0;zoom=1;game.timer=99;game.tick=0;game.phase='intro';game.phaseT=0;game.control=false;game.superFreeze=0;game.banner='';
+ for(const f of game.f){f.reset();f.inp=newInput();}if(game.f.length>2){const X=[70,192,314];game.f.forEach((f,i)=>{f.x=X[i];f.facing=f.x<192?1:-1;});}projs=[];parts=[];pops=[];vfx=[];RB=[];recN=0;game.koMark=-1;game.koHit=false;game.firstHit=0;game.superKO=0;zoom=1;game.timer=99;game.tick=0;game.phase='intro';game.phaseT=0;game.control=false;game.superFreeze=0;game.banner='';
  for(const f of game.f)f.state='intro';sfx.bell();}
 function go(scene){game.scene=scene;game.menu=0;game.idleT=0;
  if(scene==='title'){game.demo=false;game.party=null;game.rtw=2;game.team=game.bench=null;titleDummies=[dummy('alen',false,1),dummy('serj',false,1),dummy('ade',false,-1)];}
@@ -1448,6 +1448,20 @@ function partySetup(){game.team=null;game.bench=null;
   game.team=[[game.f[0],game.bench[0]],[game.f[1],game.bench[1]]];game.tagCD=[0,0];game.tagIn=[0,0];}
  if(game.party==='ffa'){let k3=game.sel[2];if(k3==null){const ks=game.f.map(f=>f.key),pool=ORDER.filter(k=>!ks.includes(k));k3=ROSTER.indexOf(pick(pool.length?pool:ORDER));game.sel[2]=k3;}
   const f3=new Fighter(ROSTER[k3],2,false,null);f3.cos=game.f.some(f=>f.key===f3.key)?1:0;f3.ai=newAI(game.level);game.f.push(f3);}}
+// ---- KO replay: the last moments before the deciding KO, in slow motion ----
+let RB=[],recN=0,RP_=null;
+function recFrame(){if(game.demo||NET.resyncing||game.phase==='intro')return;if(game.koMark>=0&&recN>game.koMark+40)return;
+ if(game.koMark<0&&((game.phase==='ko'&&game.koHit)||game.phase==='finish'))game.koMark=recN;
+ RB.push({n:recN,ids:game.f.slice(),s:snapState(),parts:parts.map(q=>Object.assign({},q)),pops:pops.map(q=>Object.assign({},q)),vfx:vfx.map(q=>Object.assign({},q)),zoom,zx,zy,flashA});recN++;if(RB.length>200)RB.shift();}
+function startReplay(){if(game.koMark<0)return false;const fr=RB.filter(r=>r.n>=game.koMark-90&&r.n<=game.koMark+30);if(fr.length<40)return false;
+ RP_={fr,t:0,end:{ids:game.f.slice(),s:snapState()},ko:fr.findIndex(r=>r.n===game.koMark)};game.scene='replay';say('replay!',true);return true;}
+function replayShow(i){const r=RP_.fr[Math.min(i,RP_.fr.length-1)];game.f=r.ids.slice();loadState(r.s);parts=r.parts.map(q=>Object.assign({},q));pops=r.pops.map(q=>Object.assign({},q));vfx=r.vfx.map(q=>Object.assign({},q));shake=0;flashA=r.flashA*.6;
+ const kz=i>=RP_.ko-20?1.14:1.04,L=game.f.find(f=>f.hp<=0)||game.f[0];zoom=kz;zx=clamp(L.x,0,W);zy=clamp(L.y-50,0,H);}
+function updateReplay(){const R=RP_;R.t++;const n=R.fr.length,slowAt=R.ko-25,idx=R.t<slowAt*2?Math.floor(R.t/2):Math.floor(slowAt+(R.t-slowAt*2)/3);
+ if(idx>=n||(R.t>20&&(menuKey('ok','back')||pressed.size>0))){game.f=R.end.ids.slice();loadState(R.end.s);parts=[];pops=[];vfx=[];zoom=1;flashA=0;RP_=null;game.scene='fight';return;}
+ if(idx!==R.idx){R.idx=idx;replayShow(idx);}}
+function drawReplayOverlay(){V.fillStyle='#000';V.fillRect(0,0,W,16);V.fillRect(0,H-16,W,16);V.fillStyle='rgba(40,20,0,.12)';V.fillRect(0,16,W,H-32);
+ if(frame%50<34){V.fillStyle='#ff2a3a';V.fillRect(10,5,5,5);}txt('REPLAY',20,4,7,'#ffffff','left',null);txt('ANY KEY: SKIP',W-8,H-12,5,'#8a78aa','right',null);}
 function updateFight(){
  const [a,b]=game.f;
  if(game.demo&&(pressed.size>0)){go('title');return;}
@@ -1478,14 +1492,14 @@ function updateFight(){
  if(game.phase==='closing'){const t=game.phaseT,A=game.finAtt,D=game.finDef;
   if(t<44){shake=Math.max(shake,1);if(t%3===0)burst(D.x+rnd(-14,14),D.y-rnd(10,80),3,['#b48cff','#ff7a1a','#ffffff'],1.6,18,-.06,2);}
   if(t===44){D.pumpkin=true;D.vx=0;flashA=1;shake=12;sfx.thud();sfx.h();burst(D.x,D.y-40,46,['#ff7a1a','#ffd23a','#3a6b2a','#ffffff'],4.2,42,.06,2);burst(D.x,D.y-30,24,['#6a4a5a','#b48cff','#e0d0ff'],2,50,-.05,3);game.banner='PUMPKINED!';game.bannerT=150;}
-  if(t===160){A.state='idle';game.phase='ko';game.phaseT=60;game.control=false;}}
+  if(t===160){A.state='idle';game.phase='ko';game.koHit=true;game.phaseT=60;game.control=false;}}
  if(game.phase==='ko'){
   const t=game.phaseT;
   if(t===70){const w=decideRound();
    game.roundWinner=w;recordRound(w);if(w>=0){game.wins[w]++;const wf=game.f[w];wf.score+=game.timer*100+(wf.hp>=wf.ch.hp?20000:0);}}
   if(t>=70&&game.roundWinner>=0){const wf=game.f[game.roundWinner];if(wf.actionable()||wf.state==='land')wf.state='win';}
   if(t===110){const w=game.roundWinner;game.banner=w<0?'DRAW':(game.f[w].ch.name+' WINS');game.bannerT=110;}
-  if(t>=230){if(game.wins.some(v=>v>=game.rtw)){game.winner=game.wins.findIndex(v=>v>=game.rtw);if(game.demo){go('title');return;}game.lastWon=recordMatch();if(game.party==='wso')wsoAfter();if(game.mode==='story'&&game.winner===0){storyAfterWin();return;}game.scene='result';game.resIdx=0;sfx.win();game.newUnl=game.unl0?unlockKeys().filter(k=>!game.unl0.has(k)):[];if(game.newUnl.length)setTimeout(()=>say('new unlock!'),1400);const wf=game.f[game.winner];selDummies[0]=dummy(wf.key,wf.alt,1);selDummies[0].cos=wf.cos;selDummies[0].state='win';}
+  if(t>=230){if(game.wins.some(v=>v>=game.rtw)){game.winner=game.wins.findIndex(v=>v>=game.rtw);if(game.demo){go('title');return;}if(!game.replayed){game.replayed=true;if(startReplay())return;}game.lastWon=recordMatch();if(game.party==='wso')wsoAfter();if(game.mode==='story'&&game.winner===0){storyAfterWin();return;}game.scene='result';game.resIdx=0;sfx.win();game.newUnl=game.unl0?unlockKeys().filter(k=>!game.unl0.has(k)):[];if(game.newUnl.length)setTimeout(()=>say('new unlock!'),1400);const wf=game.f[game.winner];selDummies[0]=dummy(wf.key,wf.alt,1);selDummies[0].cos=wf.cos;selDummies[0].state='win';}
    else{game.round++;startRound();}}
  }
  for(const f of game.f){if(f.state==='intro'&&game.phase==='intro'){}}
@@ -1513,8 +1527,8 @@ function drawHUD(){const [a,b]=game.f;
   const gr=V.createLinearGradient(0,15,0,23);gr.addColorStop(0,'#fff27a');gr.addColorStop(.5,'#ffc21a');gr.addColorStop(1,'#ff7a00');V.fillStyle=gr;V.fillRect(rev?x+w-hw:x,15,hw,8);
   V.fillStyle='rgba(255,255,255,.35)';V.fillRect(rev?x+w-hw:x,16,hw,1);};
  bar(a,32,138,false);bar(b,W-170,138,true);
- txt(a.ch.name,32,4,7,'#ffffff');txt(game.party==='wso'?wsoName(0):'P1',32+a.ch.name.length*7+4,4,7,'#ff3a4a');
- txt(b.ch.name,W-32,4,7,'#ffffff','right');txt(game.party==='wso'?wsoName(1):b.ai?'CPU':'P2',W-32-b.ch.name.length*7-4,4,7,'#4ab8ff','right');
+ txt(a.ch.name,32,4,7,'#ffffff');txt(game.party==='wso'?wsoName(0):NET.spec&&game.mode==='online'?NET.pn[0]:'P1',32+a.ch.name.length*7+4,4,7,'#ff3a4a');
+ txt(b.ch.name,W-32,4,7,'#ffffff','right');txt(game.party==='wso'?wsoName(1):NET.spec&&game.mode==='online'?NET.pn[1]:b.ai?'CPU':'P2',W-32-b.ch.name.length*7-4,4,7,'#4ab8ff','right');
  // timer
  V.fillStyle='#0a0410';V.fillRect(W/2-18,1,36,29);V.fillStyle='#d8a24a';V.fillRect(W/2-17,2,34,27);V.fillStyle='#141c3a';V.fillRect(W/2-16,3,32,25);
  txt('TIME',W/2,5,5,'#ffffff','center',null);txt(String(game.timer).padStart(2,'0'),W/2,12,14,game.timer<=10&&frame%30<15?'#ff3a3a':'#ffc23a','center','#0a0410',3);
@@ -1536,6 +1550,7 @@ function drawHUD(){const [a,b]=game.f;
  // pops
  for(const p of pops){V.globalAlpha=clamp(p.life/20,0,1);txt(p.text,clamp(p.x,60,W-60),p.y,p.size,p.col,'center','#0a0410',2.5);}V.globalAlpha=1;
  if(game.demo){if(frame%60<40)txt('DEMO - PRESS ANY KEY',W/2,H-24,6,'#ffffff','center');}
+ if(game.mode==='online'&&NET.on){if(NET.spec)txt('SPECTATING  ·  ROOM '+NET.room,W/2,H-20,5,frame%60<44?'#9fe8ff':'#ffffff','center');else if(NET.specs>0)txt('WATCHING: '+NET.specs,W/2,H-20,4,'#9fe8ff','center',null);}
 }
 function drawHUD3(){const lab=['P1',game.mode==='cpu'?'CPU':'P2','CPU'],LC=['#ff3a4a','#4ab8ff','#7aff9a'];
  game.f.forEach((f,i)=>{const x=6+i*126,bw=98,bx=x+24;V.fillStyle='#0a0410';V.fillRect(x-1,3,22,22);V.fillStyle='#d8a24a';V.fillRect(x,4,20,20);V.fillStyle=['#3a1a5a','#5a1a2a','#1a3a2a'][i];V.fillRect(x+1,5,18,18);
@@ -1626,7 +1641,7 @@ function drawVS(){const t=game.vsT,k=Math.min(1,t/20);V.setTransform(S,0,0,S,0,0
  txt(game.mode==='story'?('CHAPTER '+(game.story.stage+1)+' OF '+STORY_STAGES.length+'  -  '+STORY[STORY_STAGES[game.story.stage]].title):(stagePick==='random'?'RANDOM STAGE':(STAGES.find(s=>s.id===resolveStageName())||STAGES[0]).name)+'  -  HALLOWEEN NIGHT',W/2,H-10,5,CHARS[k2].boss?'#ff6a8a':'#d8c0ff','center');}
 function drawResult(){B.clearRect(0,0,W,H);drawStageLive(B);compose();V.fillStyle='rgba(10,2,20,.7)';V.fillRect(0,0,W,H);
  const wf=game.f[game.winner];T.clearRect(0,0,W,H);const d=selDummies[0];if(d){d.x=90;d.y=FLOOR+4;d.facing=1;drawShadowT(d);drawFighter(T,d);}V.drawImage(tbuf,0,0,W,H);
- const label=game.party==='wso'?wsoName(game.winner===0?0:1)+' WINS!':game.party==='ffa'?(['PLAYER 1',game.mode==='cpu'?'CPU':'PLAYER 2','CPU'][game.winner]+' WINS'):game.mode==='online'?(game.winner===NET.side?'YOU WIN!':'YOU LOSE'):game.mode!=='2p'?(game.winner===0?'YOU WIN!':'YOU LOSE'):(game.winner===0?'PLAYER 1 WINS':'PLAYER 2 WINS');
+ const label=NET.spec&&game.mode==='online'?((NET.pn[game.winner]||'P'+(game.winner+1))+' WINS!'):game.party==='wso'?wsoName(game.winner===0?0:1)+' WINS!':game.party==='ffa'?(['PLAYER 1',game.mode==='cpu'?'CPU':'PLAYER 2','CPU'][game.winner]+' WINS'):game.mode==='online'?(game.winner===NET.side?'YOU WIN!':'YOU LOSE'):game.mode!=='2p'?(game.winner===0?'YOU WIN!':'YOU LOSE'):(game.winner===0?'PLAYER 1 WINS':'PLAYER 2 WINS');
  bigTxt(label,W*.64,34,16,'#fff27a','#ff7a1a');txt(wf.ch.name,W*.64,56,10,'#ffffff','center');
  V.fillStyle='rgba(20,10,36,.9)';V.fillRect(W*.64-100,72,200,30);V.fillStyle='#d8a24a';V.fillRect(W*.64-100,72,2,30);
  txt('"'+wf.ch.win+'"',W*.64,84,5,'#ffd23a','center',null);
@@ -1634,8 +1649,8 @@ function drawResult(){B.clearRect(0,0,W,H);drawStageLive(B);compose();V.fillStyl
  resItems().forEach((s,i)=>txt((i===game.resIdx?'> ':'  ')+s,W*.64-62,132+i*12,7,i===game.resIdx?(i===0&&game.mode!=='story'?'#ff9a5a':'#ffd23a'):'#cbb8e8','left',null));
  if(game.party==='wso'&&game.wso){const T=game.wso.players.slice().sort((a,b)=>b.wins-a.wins).slice(0,5).map(q=>q.name+' '+q.wins);txt('WINS: '+T.join('  ·  '),W*.64,160,4,'#ffd23a','center',null);}
  if(game.newUnl&&game.newUnl.length){V.fillStyle='rgba(10,4,20,.9)';V.fillRect(W*.64-110,184,220,20);V.fillStyle='#7aff9a';V.fillRect(W*.64-110,184,220,1);txt('NEW UNLOCK!',W*.64,187,5,frame%30<20?'#7aff9a':'#ffffff','center',null);txt(game.newUnl.join('  ·  '),W*.64,196,4,'#ffffff','center',null);}
- if(game.mode==='online'){const s=NET.fbMe&&!NET.fbThem?'WAITING FOR YOUR RIVAL...':NET.fbThem&&!NET.fbMe?'YOUR RIVAL WANTS TO FIGHT BACK!':'';if(s&&frame%40<28)txt(s,W*.64,174,5,NET.fbThem?'#ff9a5a':'#ffffff','center');}}
-function resItems(){return game.party==='wso'?['NEXT MATCH','END PARTY']:game.party?['FIGHT BACK!','CHARACTER SELECT','PARTY MENU']:game.mode==='story'?['CONTINUE (RETRY)','QUIT STORY']:game.mode==='online'?['FIGHT BACK!','NEW FIGHTERS','LEAVE ROOM']:['FIGHT BACK!','CHARACTER SELECT','TITLE SCREEN'];}
+ if(game.mode==='online'&&!NET.spec){const s=NET.fbMe&&!NET.fbThem?'WAITING FOR YOUR RIVAL...':NET.fbThem&&!NET.fbMe?'YOUR RIVAL WANTS TO FIGHT BACK!':'';if(s&&frame%40<28)txt(s,W*.64,174,5,NET.fbThem?'#ff9a5a':'#ffffff','center');}}
+function resItems(){if(NET.spec&&game.mode==='online')return ['WATCHING... NEXT FIGHT SOON'];return game.party==='wso'?['NEXT MATCH','END PARTY']:game.party?['FIGHT BACK!','CHARACTER SELECT','PARTY MENU']:game.mode==='story'?['CONTINUE (RETRY)','QUIT STORY']:game.mode==='online'?['FIGHT BACK!','NEW FIGHTERS','LEAVE ROOM']:['FIGHT BACK!','CHARACTER SELECT','TITLE SCREEN'];}
 const PARTY_ITEMS=[
  {t:'TAG TEAM 2V2 - 2 PLAYERS',d:'EACH PLAYER PICKS TWO FIGHTERS. PRESS T (P2: NUM 7) TO TAG YOUR PARTNER IN. THE ONE WAITING HEALS A LITTLE.',go(){startParty('tag','2p');}},
  {t:'TAG TEAM 2V2 - VS CPU',d:'YOU PICK TWO FIGHTERS AND TWO CPU RIVALS. PRESS T TO TAG.',go(){startParty('tag','cpu');}},
@@ -1684,18 +1699,19 @@ function step(){frame++;
  if(shake>0)shake=Math.max(0,shake-.5);if(zoom>1){zoom=1+(zoom-1)*.9;if(zoom<1.002)zoom=1;}if(game.bannerT>0&&game.superFreeze<=0)game.bannerT--;if(flashA>0)flashA=Math.max(0,flashA-.04);
  if(pressed.has('KeyM')&&game.scene!=='fight')musicOn=!musicOn;
  announce();chatKeys();
- if(game.scene==='title')updateTitle();else if(game.scene==='story')updateStory();else if(game.scene==='select')updateSelect();else if(game.scene==='vs')updateVS();else if(game.scene==='fight')updateFight();else if(game.scene==='result')updateResult();else if(game.scene==='extras'){if(menuKey('back','ok'))go('title');}else if(game.scene==='party')updateParty();
+ if(game.scene==='title')updateTitle();else if(game.scene==='story')updateStory();else if(game.scene==='select')updateSelect();else if(game.scene==='vs')updateVS();else if(game.scene==='fight'){updateFight();if(game.scene==='fight')recFrame();}else if(game.scene==='replay')updateReplay();else if(game.scene==='result')updateResult();else if(game.scene==='extras'){if(menuKey('back','ok'))go('title');}else if(game.scene==='party')updateParty();
  pressed.clear();updatePadPrev();}
 function render(){V.setTransform(1,0,0,1,0,0);{const want=(game.scene==='fight'||game.scene==='result')&&game.stageId?game.stageId:'tavern';if(want!==curStage)drawStage(want);}
  if(game.scene==='title')drawTitle();else if(game.scene==='story')drawStory();else if(game.scene==='select')drawSelect();else if(game.scene==='vs')drawVS();
  else if(game.scene==='fight'){drawFightWorld();compose();drawSuperCut();(game.f.length>2?drawHUD3:drawHUD)();drawBanner();if(game.paused)drawPause();}
  else if(game.scene==='result')drawResult();
+ else if(game.scene==='replay'){drawFightWorld();compose();(game.f.length>2?drawHUD3:drawHUD)();drawReplayOverlay();}
  if(chats.length&&game.scene!=='title')drawChats();
  else if(game.scene==='online')drawTitle();
  else if(game.scene==='extras')drawExtras();
  else if(game.scene==='party')drawParty();
  if(flashA>0){V.setTransform(S,0,0,S,0,0);V.fillStyle='rgba(255,255,255,'+flashA.toFixed(2)+')';V.fillRect(0,0,W,H);}}
-function loop(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(NET.on&&NET.started&&game.scene==='fight')netTick();else step();acc-=1000/60;n++;}render();requestAnimationFrame(loop);}
+function loop(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(NET.on&&NET.started&&game.scene==='fight')(NET.spec?specTick:netTick)();else step();acc-=1000/60;n++;}render();requestAnimationFrame(loop);}
 drawStage('tavern');
 if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('8px "Press Start 2P"'),document.fonts.load('20px "VT323"')]).then(()=>drawStage(curStage)).catch(()=>{});}
 requestAnimationFrame(loop);
@@ -1715,29 +1731,42 @@ function roomLink(code){const u=new URL(location.href);u.search='';u.hash='';u.s
 function showLobby(){game.mode='online';game.scene='online';
  netUI(`<h2>ONLINE VS</h2><p>Create a room and send the link to a friend, or type their room code.</p>
  <div class="row"><input id="nName" class="name" maxlength="10" placeholder="YOUR NAME" autocomplete="off" aria-label="Your name" value="${MYNAME}"></div>
- <button id="nCreate">CREATE ROOM</button><div class="row"><input id="nCode" maxlength="5" placeholder="CODE" autocomplete="off" aria-label="Room code"><button id="nJoin">JOIN</button></div>
+ <button id="nCreate">CREATE ROOM + INVITE</button><div class="row"><input id="nCode" maxlength="60" placeholder="CODE" autocomplete="off" aria-label="Room code or invite link"><button id="nJoin">JOIN</button><button id="nWatch" class="ghost">WATCH</button></div>
  <button id="nBack" class="ghost">BACK</button><p id="nMsg" class="msg"></p>`);
  const nm=document.getElementById('nName');nm.oninput=()=>{MYNAME=cleanName(nm.value);try{localStorage.setItem('cc_name',MYNAME);}catch(e){}};
- document.getElementById('nCreate').onclick=()=>netConnect(roomCode(),'host');
- const join=()=>{const c=document.getElementById('nCode').value.trim().toUpperCase();if(c.length<4){netMsg('ENTER THE 5-LETTER CODE');return;}netConnect(c,'guest');};
- document.getElementById('nJoin').onclick=join;document.getElementById('nCode').onkeydown=e=>{if(e.key==='Enter')join();};
+ document.getElementById('nCreate').onclick=()=>{const c=roomCode();oneTapInvite(c);netConnect(c,'host');};
+ const codeOf=()=>{let v=document.getElementById('nCode').value.trim();const m=/room=([A-Za-z0-9]{4,6})/.exec(v);if(m)v=m[1];return v.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);};
+ const join=role=>{const c=codeOf();if(c.length<4){netMsg('ENTER THE 5-LETTER CODE');return;}netConnect(c,role);};
+ document.getElementById('nJoin').onclick=()=>join('guest');document.getElementById('nWatch').onclick=()=>join('spec');
+ const ci=document.getElementById('nCode');ci.onkeydown=e=>{if(e.key==='Enter')join('guest');};ci.oninput=()=>{if(/room=/.test(ci.value)){const w=/watch=1/.test(ci.value);ci.value=codeOf();join(w?'spec':'guest');}};
  document.getElementById('nBack').onclick=()=>{netLeave();go('title');};}
+function inviteText(c){return 'Fight me in Columbus Clash! Room '+c;}
+function oneTapInvite(c){const link=roomLink(c);NET.copied=false;try{if(navigator.share&&isTouch){navigator.share({title:'Columbus Clash',text:inviteText(c),url:link}).catch(()=>{});return;}}catch(e){}
+ try{navigator.clipboard.writeText(link).then(()=>{NET.copied=true;netMsg('INVITE LINK COPIED! PASTE IT TO YOUR RIVAL.');}).catch(()=>{});}catch(e){}}
+async function copyText(t,okMsg){try{await navigator.clipboard.writeText(t);netMsg(okMsg);}catch(e){netMsg('COPY FAILED: '+t);}}
 function hostPanel(){const link=roomLink(NET.room);
- netUI(`<h2>ROOM READY</h2><div class="code">${NET.room}</div><p>Send this link to your rival. The fight starts when they open it.</p>
- <div class="row"><input class="link" id="nLink" readonly value="${link}" aria-label="Room link"><button id="nCopy">COPY</button></div>
- <button id="nBack" class="ghost">CANCEL</button><p id="nMsg" class="msg">WAITING FOR A RIVAL...</p>`);
+ netUI(`<h2>ROOM READY</h2><div class="code">${NET.room}</div><p>Send the invite to your rival. The fight starts when they open it. Friends can watch with the watch link.</p>
+ <div class="row"><button id="nInvite">${navigator.share&&isTouch?'SHARE INVITE':'COPY INVITE LINK'}</button><button id="nCode2" class="ghost">COPY CODE</button><button id="nWatchL" class="ghost">COPY WATCH LINK</button></div>
+ <div class="row"><input class="link" id="nLink" readonly value="${link}" aria-label="Room link"><button id="nCopy" class="ghost">COPY</button></div>
+ <button id="nBack" class="ghost">CANCEL</button><p id="nMsg" class="msg">${NET.copied?'INVITE LINK COPIED! PASTE IT TO YOUR RIVAL.':'WAITING FOR A RIVAL...'}</p>`);
+ document.getElementById('nInvite').onclick=()=>{if(navigator.share&&isTouch)navigator.share({title:'Columbus Clash',text:inviteText(NET.room),url:link}).catch(()=>{});else copyText(link,'INVITE LINK COPIED!');};
+ document.getElementById('nCode2').onclick=()=>copyText(NET.room,'CODE COPIED: '+NET.room);
+ document.getElementById('nWatchL').onclick=()=>copyText(link+'&watch=1','WATCH LINK COPIED!');
  document.getElementById('nCopy').onclick=async()=>{try{await navigator.clipboard.writeText(link);netMsg('LINK COPIED!');}catch(e){const i=document.getElementById('nLink');i.select();try{document.execCommand('copy');netMsg('LINK COPIED!');}catch(_){netMsg('SELECT THE LINK AND COPY IT');}}};
- if(navigator.share)document.getElementById('nCopy').insertAdjacentHTML('afterend','<button id="nShare">SHARE</button>'),document.getElementById('nShare').onclick=()=>navigator.share({title:'Columbus Clash',text:'Fight me in Columbus Clash! Room '+NET.room,url:link}).catch(()=>{});
  document.getElementById('nBack').onclick=()=>{netLeave();showLobby();};}
 async function netConnect(room,role){
- netLeave(true);Object.assign(NET,{on:true,room,role,side:role==='host'?0:1,ready:false,started:false,goSent:false});game.mode='online';game.scene='online';
- if(role==='host')hostPanel();else netUI(`<h2>JOINING ${room}</h2><p>Connecting to the tavern...</p><button id="nBack" class="ghost">CANCEL</button><p id="nMsg" class="msg"></p>`),document.getElementById('nBack').onclick=()=>{netLeave();showLobby();};
+ netLeave(true);Object.assign(NET,{on:true,room,role,spec:role==='spec',specAsked:false,spReq:false,spin:{},pn:['P1','P2'],side:role==='host'?0:role==='spec'?0:1,ready:false,started:false,goSent:false});game.mode='online';game.scene='online';
+ if(role==='host')hostPanel();else if(role==='spec')netUI(`<h2>WATCHING ${room}</h2><p>Connecting to the tavern...</p><button id="nBack" class="ghost">LEAVE</button><p id="nMsg" class="msg"></p>`),document.getElementById('nBack').onclick=()=>{netLeave();go('title');};
+ else netUI(`<h2>JOINING ${room}</h2><p>Connecting to the tavern...</p><button id="nBack" class="ghost">CANCEL</button><p id="nMsg" class="msg"></p>`),document.getElementById('nBack').onclick=()=>{netLeave();showLobby();};
  try{await loadSB();}catch(e){netMsg('COULD NOT REACH THE ONLINE SERVICE');return;}
  NET.sb=NET.sb||window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false},realtime:{params:{eventsPerSecond:40}}});
  const me=role+'-'+Math.random().toString(36).slice(2,8);
  const ch=NET.sb.channel('cc-room-'+room,{config:{broadcast:{self:false,ack:false},presence:{key:me}}});NET.ch=ch;
  ch.on('broadcast',{event:'m'},({payload})=>netRecv(payload));
- ch.on('presence',{event:'sync'},()=>{const st=ch.presenceState();let host=0,guest=0;for(const k in st){if(k.startsWith('host'))host++;else guest++;}
+ ch.on('presence',{event:'sync'},()=>{if(NET.ch!==ch)return;const st=ch.presenceState();let host=0,guest=0,spec=0;const gs=[];for(const k in st){if(k.startsWith('host'))host++;else if(k.startsWith('spec'))spec++;else{guest++;const m=st[k]&&st[k][0];gs.push({k,at:(m&&m.at)||0});}}
+  NET.specs=spec;
+  if(role==='spec'){if(host>=1){if(!NET.specAsked){NET.specAsked=true;netMsg('WAITING FOR THE FIGHT...');netSend({t:'specreq'});}}else if(NET.specAsked)netDrop('THE HOST CLOSED THE ROOM');else netMsg('WAITING FOR THE HOST...');return;}
+  if(role==='guest'&&!NET.ready){if(!st[me])return;if(gs.length>1){gs.sort((a,b)=>a.at-b.at||(a.k<b.k?-1:1));if(gs[0].k!==me){netConnect(room,'spec');return;}}}
   if(host>=1&&guest>=1){if(!NET.ready)netReady();}
   else if(NET.ready){netDrop('YOUR RIVAL LEFT THE ROOM');}
   else netMsg(role==='host'?'WAITING FOR A RIVAL...':(host?'':'WAITING FOR THE HOST... CHECK THE CODE'));});
@@ -1745,7 +1774,7 @@ async function netConnect(room,role){
 function netFightBack(){if(NET.fbMe&&NET.fbThem&&NET.role==='host'&&game.scene==='result'){const sel=game.sel.slice(),el=(game.el||[null,null]).slice(),D=NET.D,x=netExtra();netSend({t:'go',sel,el,D,x});setTimeout(()=>netSend({t:'go',sel,el,D,x}),250);startNetMatch(sel,D,el,x);}}
 function netExtra(){game.stageId=resolveStage();return {stage:game.stageId,cos:(game.cos||[0,0]).slice()};}
 function netApplyExtra(x){if(x.stage&&STAGES.some(s=>s.id===x.stage)){game.stageId=x.stage;game.stageFixed=true;}if(x.cos)game.cos=x.cos.map(v=>Math.max(0,Math.min(COS.length-1,v|0)));}
-function netReady(){NET.ready=true;sfx.ok();netSend({t:'hi',n:MYNAME||'RIVAL'});enterOnlineSelect();if(NET.role==='host')setTimeout(rtcStart,300);}
+function netReady(){NET.ready=true;sfx.ok();netSend({t:'hi',n:MYNAME||'RIVAL',r:NET.role});enterOnlineSelect();if(NET.role==='host')setTimeout(rtcStart,300);}
 function enterOnlineSelect(){netUI('');game.mode='online';game.scene='select';game.lock=[false,false];game.selPhase=0;game.sel=[NET.side===0?ORDER.indexOf('alen'):0,NET.side===1?1:1];game.sel=[0,1];game.menu=0;game.idleT=0;NET.goSent=false;NET.started=false;NET.cur=null;selDummies[0]=selDummies[1]=null;}
 function netLeave(keepUI){try{if(NET.ch){NET.ch.untrack&&NET.ch.untrack();NET.sb&&NET.sb.removeChannel(NET.ch);}}catch(e){}try{NET.dc&&NET.dc.close();NET.pc&&NET.pc.close();}catch(e){}
  Object.assign(NET,{on:false,ready:false,started:false,peer:false,dc:null,pc:null,ch:null,iceQ:[],cur:null});if(!keepUI)netUI('');}
@@ -1759,23 +1788,28 @@ function dcBind(dc){NET.dc=dc;dc.onopen=()=>{NET.peer=true;};dc.onclose=()=>{NET
 async function rtcStart(){try{if(!window.RTCPeerConnection)return;const pc=rtcSetup();dcBind(pc.createDataChannel('g',{ordered:false,maxRetransmits:0}));const o=await pc.createOffer();await pc.setLocalDescription(o);netSend({t:'offer',sdp:pc.localDescription.toJSON()});}catch(e){}}
 async function rtcFlush(){const pc=NET.pc;if(!pc||!pc.remoteDescription)return;for(const c of NET.iceQ.splice(0))try{await pc.addIceCandidate(c);}catch(e){}}
 async function netRecv(m){if(!m||!NET.on)return;const other=1-NET.side;
+ if(NET.spec&&!['go','sp','spsnap','spwait','h','chat','bye','hi'].includes(m.t))return;
  switch(m.t){
   case 'offer':try{if(!window.RTCPeerConnection)return;const pc=rtcSetup();await pc.setRemoteDescription(m.sdp);const a=await pc.createAnswer();await pc.setLocalDescription(a);netSend({t:'answer',sdp:pc.localDescription.toJSON()});rtcFlush();}catch(e){}break;
   case 'answer':try{await NET.pc.setRemoteDescription(m.sdp);rtcFlush();}catch(e){}break;
   case 'ice':NET.iceQ.push(m.c);rtcFlush();break;
   case 'sel':if(game.scene==='select'){game.sel[other]=m.i;game.lock[other]=!!m.l;if(!game.el)game.el=[null,null];game.el[other]=m.e||null;if(!game.cos)game.cos=[0,0];game.cos[other]=m.c|0;}break;
-  case 'go':if(NET.role==='guest')startNetMatch(m.sel,m.D,m.el,m.x);break;
+  case 'go':if(NET.role==='guest')startNetMatch(m.sel,m.D,m.el,m.x);else if(NET.spec)specStart(m.sel,m.el,m.x,m.pn);break;
   case 'ping':netSend({t:'pong',ts:m.ts},true);break;
   case 'pong':{const r=performance.now()-m.ts;NET.rtt=NET.rtt?NET.rtt*.7+r*.3:r;}break;
   case 'in':for(let i=0;i<m.b.length;i++){const f=m.f0+i;if(f>=0&&NET.remote[f]==null)NET.remote[f]=m.b[i];}break;
-  case 'h':NET.hostHash[m.f]=m.h;netCheckHash(m.f);break;
+  case 'h':NET.hostHash[m.f]=m.h;if(!NET.spec)netCheckHash(m.f);break;
   case 'snapreq':if(NET.role==='host'&&NET.snaps[m.f])netSend({t:'snap',f:m.f,s:NET.snaps[m.f]});break;
   case 'snap':if(NET.role==='guest')netResync(m.f,m.s);break;
   case 'rematch':if(game.scene==='result'||game.scene==='fight')enterOnlineSelect();break;
-  case 'bye':netDrop('YOUR RIVAL LEFT THE ROOM');break;
-  case 'hi':{const n=cleanName(m.n);if(n&&n!==NET.rival){NET.rival=n;netSend({t:'hi',n:MYNAME||'RIVAL'});}}break;
+  case 'bye':netDrop(NET.spec?'A PLAYER LEFT THE ROOM':'YOUR RIVAL LEFT THE ROOM');break;
+  case 'hi':{const n=cleanName(m.n);if(m.r&&NET.pn)NET.pn[m.r==='host'?0:1]=n||NET.pn[m.r==='host'?0:1];if(NET.spec)break;if(n&&n!==NET.rival){NET.rival=n;netSend({t:'hi',n:MYNAME||'RIVAL',r:NET.role});}}break;
+  case 'specreq':if(NET.role==='host')specServe();break;
+  case 'sp':if(NET.spec)for(let i=0;i<m.c.length;i++){const f=m.f0+i;if(NET.spin[f]==null)NET.spin[f]=m.c[i];}break;
+  case 'spsnap':if(NET.spec)specJoin(m);break;
+  case 'spwait':if(NET.spec){if(m.pn)NET.pn=m.pn.map(cleanName);if(game.scene!=='fight'&&game.scene!=='result')netUI(`<h2>WATCHING ${NET.room}</h2><p>${NET.pn[0]} and ${NET.pn[1]} are picking fighters...</p><button id="nBack" class="ghost">LEAVE</button>`),document.getElementById('nBack').onclick=()=>{netLeave();go('title');};}break;
   case 'fb':if(game.scene==='result'){NET.fbThem=true;sfx.ok();netFightBack();}break;
-  case 'chat':chatSay(m.s!=null?m.s:other,m.i|0);break;
+  case 'chat':if(m.s==null&&NET.spec)break;chatSay(m.s!=null?m.s:other,m.i|0);break;
  }}
 function netSelect(LIST,L,R,OK,U,D,elc){const me=NET.side,N=LIST.length;let ch=false;if(!game.el)game.el=[null,null];
  if(!game.lock[me]){if(L){game.sel[me]=(game.sel[me]+N-1)%N;game.el[me]=null;ch=true;sfx.move();}if(R){game.sel[me]=(game.sel[me]+1)%N;game.el[me]=null;ch=true;sfx.move();}if((U||D)&&elc){elc(me,U,D);ch=true;}if(OK){game.lock[me]=true;ch=true;sfx.ok();}
@@ -1785,8 +1819,8 @@ function netSelect(LIST,L,R,OK,U,D,elc){const me=NET.side,N=LIST.length;let ch=f
  if(NET.role==='host'&&frame%30===0)netSend({t:'ping',ts:performance.now()},true);
  if(NET.role==='host'&&game.lock[0]&&game.lock[1]&&!NET.goSent){NET.goSent=true;const sel=game.sel.slice(),el=(game.el||[null,null]).slice(),D=Math.max(3,Math.min(12,Math.ceil((NET.rtt||120)/2/16.7)+2));const x=netExtra();netSend({t:'go',sel,el,D,x});setTimeout(()=>netSend({t:'go',sel,el,D,x}),250);startNetMatch(sel,D,el,x);return false;}
  return true;}
-function startNetMatch(sel,D,el,x){if(NET.started&&game.scene==='fight')return;NET.fbMe=NET.fbThem=false;netApplyExtra(x||{});NET.D=D||NET.D||5;game.sel=sel.slice();game.el=(el||[null,null]).slice();game.mode='online';game.demo=false;startMatch();game.scene='fight';frame=0;
- Object.assign(NET,{f:0,local:{},remote:{},snaps:{},hashes:{},hostHash:{},pend:0,sendT:0,stall:0,started:true,cur:null});NET.tmp=newInput();
+function startNetMatch(sel,D,el,x){if(NET.started&&game.scene==='fight')return;NET.lastX=x||{};NET.fbMe=NET.fbThem=false;netApplyExtra(x||{});NET.D=D||NET.D||5;game.sel=sel.slice();game.el=(el||[null,null]).slice();game.mode='online';game.demo=false;startMatch();game.scene='fight';frame=0;
+ Object.assign(NET,{f:0,local:{},remote:{},snaps:{},hashes:{},hostHash:{},pend:0,sendT:0,stall:0,started:true,cur:null,spHist:{},spSent:0});NET.tmp=newInput();
  for(let i=0;i<NET.D;i++){NET.local[i]=0;NET.remote[i]=0;}}
 function netTick(){
  readInput(NET.tmp,MAPALL,0);const bits=packInput(NET.tmp);NET.pend|=bits&PRMASK;
@@ -1795,9 +1829,26 @@ function netTick(){
  let steps=0;
  while(steps<2&&NET.remote[NET.f]!=null&&NET.local[NET.f]!=null&&game.scene==='fight'){
   const mine=NET.local[NET.f],theirs=NET.remote[NET.f];NET.cur=NET.side===0?[mine,theirs]:[theirs,mine];
-  step();netAfterStep();NET.f++;NET.stall=0;steps++;
+  step();netAfterStep();if(NET.role==='host'&&NET.cur){NET.spHist[NET.f]=NET.cur.slice();delete NET.spHist[NET.f-900];}NET.f++;NET.stall=0;steps++;
+  if(NET.role==='host'){if(NET.specs>0){if(NET.f%15===0)spFlush();}else NET.spSent=NET.f;}
   if(NET.remote[NET.f+2]==null)break;}
  if(!steps){NET.stall++;pressed.clear();if(NET.stall>60*12)netDrop('CONNECTION LOST');}}
+function spPn(){return NET.role==='host'?[MYNAME||'HOST',NET.rival||'GUEST']:NET.pn;}
+function spFlush(){const c=[];for(let f=NET.spSent;f<NET.f;f++)c.push(NET.spHist[f]||[0,0]);if(c.length){netSend({t:'sp',f0:NET.spSent,c});NET.spSent=NET.f;}}
+function specServe(){if(game.scene==='fight'&&NET.started){const ks=Object.keys(NET.snaps).map(Number).filter(f=>f<NET.f);const f=ks.length?Math.max(...ks):-1;
+  netSend({t:'spsnap',f,s:f>=0?NET.snaps[f]:null,sel:game.sel,el:game.el,x:NET.lastX||{},pn:spPn()});NET.spSent=f+1;spFlush();}
+ else netSend({t:'spwait',pn:spPn()});}
+function specStart(sel,el,x,pn){if(NET.started&&game.scene==='fight'&&NET.f<150)return;netUI('');if(pn)NET.pn=pn.map(cleanName);game.sel=sel.slice();game.el=(el||[null,null]).slice();game.mode='online';game.demo=false;netApplyExtra(x||{});startMatch();game.scene='fight';frame=0;
+ Object.assign(NET,{f:0,spin:{},hostHash:{},started:true,spRun:false,spReq:false,cur:null});}
+function specJoin(m){netUI('');if(m.pn)NET.pn=m.pn.map(cleanName);const keep=NET.spin;
+ if(!(NET.started&&game.scene==='fight'&&NET.spReq)){game.sel=m.sel.slice();game.el=(m.el||[null,null]).slice();game.mode='online';game.demo=false;netApplyExtra(m.x||{});startMatch();game.scene='fight';frame=0;}
+ if(m.s)loadState(m.s);Object.assign(NET,{f:m.f+1,spin:keep||{},hostHash:{},started:true,spRun:false,spReq:false,cur:null});}
+function specTick(){const have=f=>NET.spin[f]!=null;let ahead=0;while(ahead<240&&have(NET.f+ahead))ahead++;
+ if(!NET.spRun&&ahead<20){pressed.clear();return;}NET.spRun=ahead>0;const max=ahead>90?3:1;let steps=0;
+ while(steps<max&&have(NET.f)&&game.scene==='fight'){NET.cur=NET.spin[NET.f];step();const f=NET.f;
+  if(f%60===0){const h=netHash(),hh=NET.hostHash[f];if(hh!=null){if(hh===h)NET.spOk=(NET.spOk||0)+1;else{NET.spBad=(NET.spBad||0)+1;if(!NET.spReq){NET.spReq=true;netSend({t:'specreq'});}}}delete NET.hostHash[f];}
+  delete NET.spin[f-300];NET.f++;steps++;}
+ if(!have(NET.f))NET.spRun=false;}
 function netHash(){let s=game.timer+'|'+game.phase+'|'+projs.length;for(const f of game.f)s+='|'+f.x.toFixed(2)+','+f.y.toFixed(2)+','+f.hp+','+f.state+','+f.moveT+','+Math.round(f.meter);
  let h=5381;for(let i=0;i<s.length;i++)h=((h*33)^s.charCodeAt(i))>>>0;return h;}
 function netAfterStep(){const f=NET.f;delete NET.local[f-240];delete NET.remote[f-240];
@@ -1817,7 +1868,7 @@ function netResync(f,str){try{const target=NET.f;loadState(str);const snd=soundO
   for(let fr=f+1;fr<target;fr++){const mine=NET.local[fr],theirs=NET.remote[fr];if(mine==null||theirs==null)break;NET.cur=NET.side===0?[mine,theirs]:[theirs,mine];step();if(fr%60===0)NET.hashes[fr]=netHash();}
   soundOn=snd;}catch(e){}NET.resyncing=false;}
 // open a shared link straight into the room
-try{const q=new URLSearchParams(location.search).get('room');if(q&&/^[A-Z0-9]{4,6}$/i.test(q)){setTimeout(()=>netConnect(q.toUpperCase(),'guest'),300);}}catch(e){}
+try{const U=new URLSearchParams(location.search),q=U.get('room');if(q&&/^[A-Z0-9]{4,6}$/i.test(q)){setTimeout(()=>netConnect(q.toUpperCase(),U.get('watch')==='1'?'spec':'guest'),300);}}catch(e){}
 
 // ================= HELP PANEL =================
 const help=document.getElementById('help');
