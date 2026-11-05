@@ -59,7 +59,7 @@ main{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;align-ite
 #touch .act.b{border-color:#9fe8ff;font-size:11px}#touch .act.p{border-color:#e2263a}#touch .act.k{border-color:#3a8be0}#touch .act.s{border-color:var(--gold)}
 #touch .small{height:34px;font-size:8px;padding:0 10px}
 
-section.help{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+section.help{width:100%;max-width:820px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:14px}
 .card{background:var(--panel);border:2px solid var(--line);padding:16px 18px;min-width:0}
 .card h2{font-family:var(--display);font-size:12px;line-height:1.5;margin:0 0 4px;color:var(--gold);letter-spacing:.06em;text-wrap:balance}
 .card h3{font-family:var(--display);font-size:9px;margin:14px 0 6px;color:var(--pumpkin);letter-spacing:.08em}
@@ -68,6 +68,7 @@ section.help{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minma
 .card dt{color:var(--gold);white-space:nowrap}
 .card dd{margin:0;color:var(--ink);min-width:0}
 .card p{margin:0 0 6px;color:var(--muted)}
+section.help .note{margin:10px 0 0;font-size:.9em}section.help .credits{grid-column:1/-1;margin:0;font-size:.8em;color:var(--muted);text-align:center}.card dl.kombo{gap:5px 12px;align-items:baseline}
 kbd{font-family:var(--body);background:#2a1840;border:1px solid #4a3166;border-bottom-width:2px;padding:0 5px;border-radius:3px;color:var(--ink)}
 .f-alen{border-top:4px solid #ffd21f}.f-serj{border-top:4px solid #e2263a}.f-ade{border-top:4px solid #eeeef4}.f-odi{border-top:4px solid #4aa8ff}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -1482,23 +1483,26 @@ try{const q=new URLSearchParams(location.search).get('room');if(q&&/^[A-Z0-9]{4,
 // ================= HELP PANEL =================
 const help=document.getElementById('help');
 const SPN={s1:'← → + LP or HP  (or <kbd>SP</kbd>)',s2:'↓ → + HP  (or ↓ + <kbd>SP</kbd>)',s3:'↓ ← + LK or HK  (or → + <kbd>SP</kbd>)',sup:'HP + HK together, meter full'};
-let html=`<div class="card"><h2>Controls</h2><p class="tag">KEYBOARD · GAMEPAD · TOUCH</p><dl>
+const CTRL=`<div class="card"><h2>Controls</h2><dl>
 <dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dd>
-<dt>Punch</dt><dd><kbd>I</kbd> high · <kbd>J</kbd> low</dd><dt>Kick</dt><dd><kbd>O</kbd> high · <kbd>K</kbd> low</dd>
-<dt>Block</dt><dd><kbd>L</kbd></dd><dt>Special</dt><dd><kbd>U</kbd> · super <kbd>Space</kbd></dd>
-<dt>Touch</dt><dd>Slide your thumb around the pad for motions (↓ → etc.). Buttons: LP HP LK HK, BL block, SP special, SUPER.</dd>
-<dt>Local P2</dt><dd>Gamepad, or arrows + numpad (1/4 punch · 2/5 kick · 3 block · 6 special)</dd>
-<dt>Gamepad</dt><dd>X low punch · Y high punch · A low kick · B high kick · RB/LT block · LB special · RT super</dd>
+<dt>Punch</dt><dd><kbd>J</kbd> low · <kbd>I</kbd> high</dd><dt>Kick</dt><dd><kbd>K</kbd> low · <kbd>O</kbd> high</dd>
+<dt>Block</dt><dd><kbd>L</kbd> (add <kbd>S</kbd> for low hits)</dd><dt>Special</dt><dd><kbd>U</kbd></dd><dt>Super</dt><dd><kbd>Space</kbd> when the meter is full</dd>
+<dt>Throw</dt><dd><kbd>D</kbd> + <kbd>J</kbd> up close</dd><dt>Finisher</dt><dd><kbd>S</kbd> <kbd>S</kbd> + <kbd>I</kbd> on a dizzy rival</dd>
 <dt>Other</dt><dd><kbd>Enter</kbd> start · <kbd>Esc</kbd> pause · <kbd>M</kbd> music</dd></dl>
-<h3>MOVES</h3><dl><dt>Block</dt><dd>Hold block (or hold away). Add down to stop low hits. Crouching ducks high punches and kicks.</dd>
-<dt>→ + LP</dt><dd>Mid punch (hits crouchers). Up close it's a THROW.</dd><dt>↓ + HP</dt><dd>UPPERCUT</dd>
-<dt>↓ + LK / HK</dt><dd>Low kick / sweep</dd><dt>→ + LK</dt><dd>Low kick</dd><dt>← + HK</dt><dd>Roundhouse</dd><dt>Jump + any</dt><dd>Jump punch or kick</dd></dl>
-<h3>CLOSING TIME</h3><p>Win the deciding round and your rival is left dizzy. Press <b>↓ ↓ + HP</b> (or SUPER) before time runs out to turn them into a pumpkin.</p>
-<h3>SUPER METER</h3><p>Fills when you hit or get hit. When it flashes MAX, press high punch and high kick together. Combos scale damage down after each hit, so finish with an ender or a special.</p><h3>STORY MODE</h3><p>Pick a hero and survive Halloween night in 4 chapters. Every fighter you meet in the story unlocks for 1P and 2P versus. Until then they show up as a shadow with a ?.</p><h3>CREDITS</h3><p>Power and hit effects rendered with pixelfx by Patch and Hugo Duprez (MIT, github.com/patch-gg/pixelfx). Ghoul, Brutus and Banshee sprites: "Bad Company" universal prototype by Stonewall, CC0, OpenGameArt.org. Recoloured for Halloween.</p></div>`;
-for(const k of ORDER){const c=CHARS[k];const combos=Object.entries(c.dial||{}).filter(([s,m])=>c.moves[m]).map(([s,m])=>`<dt>${s.split(',').join(' , ')}</dt><dd>${c.moves[m].name}</dd>`).join('');
- const sps=['s1','s2','s3','sup'].map(s=>`<dt>${c.moves[c.sp[s]].name}</dt><dd>${SPN[s]}</dd>`).join('');
- html+=`<div class="card f-${k}"><h2>${c.name}</h2><p class="tag">${c.title}</p><p>${c.blurb}</p><h3>KOMBO STRINGS</h3><dl>${combos}</dl><h3>SPECIALS + SUPER</h3><dl>${sps}</dl></div>`;}
-help.innerHTML=html;
+<p class="note">Touch: slide on the pad, tap the buttons. Gamepad works too.</p></div>`;
+const CRED=`<p class="credits">Effects: pixelfx by Patch and Hugo Duprez (MIT). Ghoul, Brutus and Banshee: "Bad Company" by Stonewall (CC0, OpenGameArt).</p>`;
+const KEYN={LP:'J',HP:'I',LK:'K',HK:'O'};
+const kseq=s=>s.split(',').map(t=>`<kbd>${KEYN[t]||t}</kbd>`).join(' ');
+const SPK={s1:'<kbd>A</kbd> <kbd>D</kbd> + punch',s2:'<kbd>S</kbd> <kbd>D</kbd> + <kbd>I</kbd>',s3:'<kbd>S</kbd> <kbd>A</kbd> + kick',sup:'<kbd>Space</kbd> or <kbd>I</kbd>+<kbd>O</kbd>, meter full'};
+function helpFighter(){try{if(game.scene==='fight'||game.scene==='vs'||game.scene==='end'){const f=game.f&&game.f[game.mode==='online'?NET.side:0];if(f)return f.key;}
+ if(game.sel)return ROSTER[game.sel[game.mode==='online'?NET.side:0]];}catch(e){}return ORDER[0];}
+function renderHelp(k){const c=CHARS[k];let card='';
+ if(c&&c.sp){const combos=Object.entries(c.dial||{}).filter(([s,m])=>c.moves[m]).map(([s,m])=>`<dt>${c.moves[m].name}</dt><dd>${kseq(s)}</dd>`).join('');
+  const sps=['s1','s2','s3','sup'].map(s=>c.moves[c.sp[s]]?`<dt>${c.moves[c.sp[s]].name}</dt><dd>${SPK[s]}</dd>`:'').join('');
+  card=`<div class="card f-${k}"><h2>${c.name}</h2><p class="tag">${c.title} · P1</p><h3>KOMBOS</h3><dl class="kombo">${combos}</dl><h3>SPECIALS</h3><dl class="kombo">${sps}</dl></div>`;}
+ else card=`<div class="card"><h2>${c?c.name:'P1'}</h2><p>Pick a hero to see their kombos.</p></div>`;
+ help.innerHTML=CTRL+card+CRED;help.dataset.k=k;}
+renderHelp(helpFighter());setInterval(()=>{const k=helpFighter();if(k!==help.dataset.k)renderHelp(k);},300);
 })();
 </script>
 
