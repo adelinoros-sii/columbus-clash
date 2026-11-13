@@ -50,5 +50,11 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/fighter.js": {
+      "maxDuration": 60,
+      "includeFiles": "api/layout/**"
+    }
+  }
 }
